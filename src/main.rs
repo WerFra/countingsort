@@ -2,8 +2,8 @@ use std::fs;
 use std::time::Instant;
 
 fn main() {
-    let i = vec!["Lorem", "ipsum", "dolor", "sit", "amet", "consetetur", "sadipscing", "elitr", "sed", "diam", "nonumy", "eirmod", "tempor", "invidunt", "ut", "labore", "et", "dolore", "magna", "aliquyam"].iter().map(|x| x.to_string()).collect();
-    let result = counting_sort(i);
+    let i: Vec<String> = vec!["Lorem", "ipsum", "dolor", "sit", "amet", "consetetur", "sadipscing", "elitr", "sed", "diam", "nonumy", "eirmod", "tempor", "invidunt", "ut", "labore", "et", "dolore", "magna", "aliquyam"].iter().map(|x| x.to_string()).collect();
+    let result = counting_sort(&i, |word| word.len(), 20);
     println!("{:?}", result);
 
     let filename = "../text.txt";
@@ -11,17 +11,17 @@ fn main() {
     let words: Vec<String> = content.split_whitespace().map(|x| x.to_string()).collect();
 
     let now = Instant::now();
-    let result = counting_sort(words);
+    let result = counting_sort(&words, |word| word.len(), 20);
     let duration = now.elapsed();
     println!("took {:?}", duration);
 }
 
-/// Runs countingsort over the word length (max length 49)
-fn counting_sort(vec: Vec<String>) -> Vec<String> {
-    let mut counts = vec![0; 50];
+/// Runs countingsort
+fn counting_sort<E, F: Fn(&E) -> usize>(vec: &[E], value_func: F, classes: usize) -> Vec<&E> {
+    let mut counts = vec![0; classes];
     
-    for word in &vec {
-        let word_len = word.len();
+    for element in vec {
+        let word_len = value_func(element);
         counts[word_len] = counts[word_len] + 1;
     }
 
@@ -34,12 +34,13 @@ fn counting_sort(vec: Vec<String>) -> Vec<String> {
 
     assert_eq!(end_index, vec.len());
 
-    let mut output = vec!["".to_string(); vec.len()];
+    let mut output = vec![None; vec.len()];
 
-    for word in vec.iter().rev() {
-        output[counts[word.len()] - 1] = word.to_string();
-        counts[word.len()] = counts[word.len()] - 1;
+    for element in vec.iter().rev() {
+        let element_value = value_func(element);
+        output[counts[element_value] - 1] = Some(element);
+        counts[element_value] = counts[element_value] - 1;
     }
 
-    output
+    output.iter().map(|x| x.unwrap()).collect()
 }
